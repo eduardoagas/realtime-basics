@@ -1,0 +1,3 @@
+para usar laravel sail com reverb, é preciso alterar
+o docker-compose
+usei 8088 de vez 8080, altera no env e no reverb.php
