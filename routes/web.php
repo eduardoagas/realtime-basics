@@ -1,6 +1,6 @@
 <?php
 
-use App\Events\Example;
+use App\Events\ExampleEvent;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 
@@ -9,7 +9,7 @@ Route::get('/', function () {
 });
 
 Route::get('/broadcast', function () {
-    broadcast(new Example());
+    broadcast(new ExampleEvent("Oi seu pai tem boi"));
 });
 
 Route::get('/dashboard', function () {

@@ -10,12 +10,11 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100"
                     x-init="
-                        console.log(window.Echo.connector.channels)
+                        console.log('Listening for WebSocket messages...');
                         Echo.channel('chat')
-                            .listen('Example', (event) => {
-                                console.log(event)
-                            })
-                        console.log(window.Echo.connector.channels)
+                            .listen('.client-ExampleEvent', (event) => { // ALTERADO AQUI!
+                                console.log('📩 Event received:', event);
+                            });
                     "
                 
                 >
