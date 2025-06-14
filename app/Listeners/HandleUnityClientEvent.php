@@ -4,10 +4,12 @@ namespace App\Listeners;
 
 use App\Events\UnityResponseEvent;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Broadcast;
 use Laravel\Reverb\Events\MessageReceived;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Laravel\Reverb\Contracts\Connection;
 
 class HandleUnityClientEvent
 {
@@ -19,42 +21,110 @@ class HandleUnityClientEvent
         //
     }
 
-    /**
-     * Handle the event.
-     */
-    public function handle(MessageReceived $event)
+
+    public static array $connectionsByUser = [];
+
+    public function handle(MessageReceived $event): void
     {
+        //TODO: handle also last req of some handlers with maybe maximum of 1sec?
 
-        // 1. Decode the raw message
-        $message = json_decode($event->message, true);
-        Log::info('Received WebSocket message:', $message);
-        if (! $message || ! isset($message['event'], $message['channel'], $message['data']['message'])) {
-            Log::info("G0STO DE TORREMOS");
-            return; // Invalid or missing data
-        }
+        $data = json_decode($event->message, true);
 
-        // 2. Check if this is the event we care about
-        if ($message['event'] !== 'client-ExampleEvent') {
-            Log::info("bunITO HEIN");
+        $token = $data['token'] ?? null;
+        if (!$token || !Redis::exists("session:$token")) {
+            $event->connection->send(json_encode(['error' => 'Unauthorized']));
             return;
         }
 
-        // 3. Decide based on real time
-        $second = now()->second;
-        $response = $second % 2 === 1 ? 'yes' : 'no';
+        $session = json_decode(Redis::get("session:$token"), true);
+        $userId = $session['user_id'];
+        $username = $session['username'];
 
-        // 4. Send it back to the same channel via custom event
-        /*broadcast(new UnityResponseEvent(
-            channel: $message['channel'],
-            message: $response
-        ));*/
+        // Salva a conexão na memória
+        self::$connectionsByUser[$userId] = $event->connection;
 
-        // Step 4: Send response directly to Unity client
+        $type = $data['event'] ?? null;
+
+        match ($type) {
+            'create_battle' => $this->createBattle($userId, $token),
+            'join_battle' => $this->joinBattle($userId, $data['battle_id'], $token),
+            'shoot' => $this->handleShoot($userId, $username, $token),
+            'client-ShootRequest' => $this->handleExample($event),
+            default => $event->connection->send(json_encode(['error' => 'Invalid message type']))
+        };
+    }
+
+    private function createBattle(int $userId, string $token): void
+    {
+        $battleId = uniqid('battle_', true);
+
+        Redis::hset("battle:$battleId:users", $userId, true);
+        Redis::hset("session:$token", 'battle_instance_id', $battleId);
+
+        $this->sendToUser($userId, ['event' => 'battle_created', 'battle_id' => $battleId]);
+    }
+
+    private function joinBattle(int $userId, string $battleId, string $token): void
+    {
+        Redis::hset("battle:$battleId:users", $userId, true);
+        Redis::hset("session:$token", 'battle_instance_id', $battleId);
+
+        $this->sendToUser($userId, ['event' => 'battle_joined', 'battle_id' => $battleId]);
+    }
+
+    private function handleShoot(int $userId, string $username, string $token): void
+    {
+        $session = json_decode(Redis::get("session:$token"), true);
+        $battleId = $session['battle_instance_id'] ?? null;
+
+        if (!$battleId || !Redis::exists("battle:$battleId:users")) {
+            $this->sendToUser($userId, ['error' => 'Not in a valid battle instance']);
+            return;
+        }
+
+        $usersInBattle = Redis::hkeys("battle:$battleId:users");
+
+        foreach ($usersInBattle as $uid) {
+            if (isset(self::$connectionsByUser[$uid])) {
+                self::$connectionsByUser[$uid]->send(json_encode([
+                    'event' => 'battle_message',
+                    'message' => "$username shot!",
+                ]));
+            }
+        }
+    }
+
+    private function sendToUser(int $userId, array $payload): void
+    {
+        if (isset(self::$connectionsByUser[$userId])) {
+            self::$connectionsByUser[$userId]->send(json_encode($payload));
+        }
+    }
+
+    public function onDisconnect(Connection $connection): void
+    {
+        // Future implementation: Clean up self::$connectionsByUser and Redis
+    }
+
+
+    public function handleExample(MessageReceived $event)
+    {
+        // Verifica lógica de permissão (ex: cooldown, status)
+        /*if ($sessionData['status'] !== 'alive') {
         $event->connection->send(json_encode([
-            'event' => 'unity-response',
-            'data' => [
-                'message' => $response,
-            ],
+            'event' => 'shoot-denied',
+            'data' => ['message' => "You can't shoot right now."]
         ]));
+        return;
+        }*/
+
+        // Registra no "campo comum"
+        //BattleRegistry::addMessage($battleId, "$username shot!");
+
+        $event->connection->send(json_encode([
+            'event' => 'authorized',
+            'data' => ['message' => 'Shoot shot']
+        ]));
+        return;
     }
 }
