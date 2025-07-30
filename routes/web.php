@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\ExampleEvent;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 
@@ -9,6 +10,7 @@ Route::get('/', function () {
 });
 
 Route::get('/broadcast', function () {
+    Log::info('SEU PAI TEM BOI');
     broadcast(new ExampleEvent("Oi seu pai tem boi"));
 });
 

@@ -1,3 +1,14 @@
 para usar laravel sail com reverb, é preciso alterar
 o docker-compose
 usei 8088 de vez 8080, altera no env e no reverb.php
+
+sail artisan reverb:start --debug
+sail artisan reverb:restart
+sail artisan optimize:clear
+
+docker exec -it realtime-basics-redis-1 redis-cli
+
+-REDIS
+
+keys *
+FLUSHDB

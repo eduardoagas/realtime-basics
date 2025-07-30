@@ -14,32 +14,34 @@ class UnityLoginController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        if (!Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
 
-        $user = Auth::user();
-        $token = Str::uuid()->toString();
-
-        $userId = $user->id;
+        $user     = Auth::user();
+        $userId   = $user->id;
         $username = $user->name;
+        $token    = Str::uuid()->toString();
 
-        // Checa se há token antigo
-        $oldToken = Redis::get("user_token:$userId");
+        // Se havia um token antigo para esse usuário, remove a sessão antiga
+        $oldToken = Redis::get("user_token:{$userId}");
         if ($oldToken) {
-            Redis::del("session:$oldToken");
+            Redis::del("session:{$oldToken}");
         }
 
-        // Salva novo token com os dados (sem expiração)
-        Redis::set("session:$token", json_encode([
-            'user_id' => $userId,
-            'username' => $username,
+        // 1) Grava no hash "session:{token}" todos os campos que vamos usar
+        Redis::hset("session:{$token}", [
+            'user_id'            => $userId,
+            'username'           => $username,
             'battle_instance_id' => null,
-            'status' => 'alive',
-        ]));
+            'status'             => 'alive',
+        ]);
 
-        // Atualiza índice do usuário com novo token
-        Redis::set("user_token:$userId", $token);
+        // 2) (Opcional) define TTL para expirar a sessão em 24h
+        Redis::expire("session:{$token}", 60 * 60 * 24);
+
+        // 3) Atualiza índice rápido de lookup de token por usuário
+        Redis::set("user_token:{$userId}", $token);
 
         return response()->json(['token' => $token]);
     }
