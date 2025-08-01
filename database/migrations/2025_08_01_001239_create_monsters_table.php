@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('characters', function (Blueprint $table) {
+        Schema::create('monsters', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->integer('maxhp')->default(100);
             $table->integer('hp')->default(100);
             $table->integer('level')->default(1);
             $table->integer('pattack')->default(10);
             $table->integer('mattack')->default(10);
-            $table->integer('defense')->default(10);
+            $table->integer('defense')->default(0);
             $table->integer('agility')->default(10);
             $table->integer('stamina')->default(0);
             $table->timestamps();
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('characters');
+        Schema::dropIfExists('monsters');
     }
 };
