@@ -38,15 +38,20 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
 
         $battleId = uniqid('battle_', true);
 
-        Redis::set("battle:$battleId:character", json_encode($characterJson));
-        Redis::set("battle:$battleId:monster", json_encode($monster));
+        Redis::hset("battle:$battleId:character", $characterJson['id'], json_encode($characterJson));
+        $monsterId = uniqid('m_', true); // ou algum ID sequencial
+        Redis::hset("battle:$battleId:monsters", $monsterId, json_encode($monster));
         Redis::hset("session:$token", 'battle_instance_id', $battleId);
 
         $connection->send(json_encode([
             'event' => 'battle_with_monster_created',
             'battle_id' => $battleId,
-            'character' => $characterJson,
-            'monster' => $monster
+            'character' => [
+                $characterJson['id'] => $characterJson
+            ],
+            'monster' => [
+                $monsterId => $monster
+            ]
         ]));
     }
 }
