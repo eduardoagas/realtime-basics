@@ -1,13 +1,11 @@
 <?php
 
-// app/WebSocket/Handlers/BattleWithMonsterHandler.php
-
 namespace App\WebSocket\Handlers;
 
-use App\WebSocket\Contracts\HandlesUnityEvent;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Reverb\Contracts\Connection;
-use App\Services\UnityConnectionRegistry;
+use App\WebSocket\Contracts\HandlesUnityEvent;
 
 class BattleWithMonsterHandler implements HandlesUnityEvent
 {
@@ -19,8 +17,10 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
             ->map(fn($json) => json_decode($json, true))
             ->firstWhere('user_id', $userId);
 
+        Log::info("CharacterJson = " . json_encode($characterJson));
+
         if (!$characterJson) {
-            $this->sendToUser($userId, ['error' => 'Character not found in session']);
+            $connection->send(json_encode(['error' => 'Character not found in session']));
             return;
         }
 
@@ -42,19 +42,11 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
         Redis::set("battle:$battleId:monster", json_encode($monster));
         Redis::hset("session:$token", 'battle_instance_id', $battleId);
 
-        $this->sendToUser($userId, [
+        $connection->send(json_encode([
             'event' => 'battle_with_monster_created',
             'battle_id' => $battleId,
             'character' => $characterJson,
             'monster' => $monster
-        ]);
-    }
-
-    private function sendToUser(int $userId, array $payload): void
-    {
-        $connection = UnityConnectionRegistry::get($userId);
-        if ($connection) {
-            $connection->send(json_encode($payload));
-        }
+        ]));
     }
 }

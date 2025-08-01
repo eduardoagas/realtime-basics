@@ -2,30 +2,83 @@
 
 namespace App\WebSocket\Handlers;
 
-use App\WebSocket\Contracts\HandlesUnityEvent;
-use Laravel\Reverb\Contracts\Connection;
+use App\Models\Character;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Laravel\Reverb\Contracts\Connection;
+use App\WebSocket\Contracts\HandlesUnityEvent;
 
 class ConnectToServerHandler implements HandlesUnityEvent
 {
+
     public function handle(array $payload, int $userId, string $token, Connection $connection): void
     {
-        $characterId = $payload['character_id'] ?? null;
-
-        if (!$characterId) {
+        // —————————————
+        // 1) Extrai e valida data
+        $data = $payload['data'] ?? null;
+        if (! is_array($data)) {
             $connection->send(json_encode([
-                'event' => 'unity-response',
-                'data' => ['message' => 'Character ID is required.']
+                'event'   => 'character_invalid',
+                'message' => 'Missing data payload.',
             ]));
             return;
         }
 
-        Redis::set("unity:{$userId}:token", $token);
-        Redis::set("unity:{$userId}:character_id", $characterId);
+        $characterId = $data['character_id'] ?? null;
 
+        // —————————————
+        // 2) Se enviou character_id, valida se pertence ao usuário
+        if ($characterId) {
+            $character = Character::where('id', $characterId)
+                ->where('user_id', $userId)
+                ->first();
+
+            if (! $character) {
+            $connection->send(json_encode([
+                    'event'   => 'character_invalid',
+                    'message' => 'Character not found or does not belong to user.',
+            ]));
+            return;
+        }
+        }
+        // —————————————
+        // 3) Se não enviou, cria ou recupera o primeiro
+        else {
+            Log::info("NOVO PERSONAGEM CRIADO");
+
+            $character = Character::where('user_id', $userId)->first();
+            if (! $character) {
+                $character = Character::create([
+                    'user_id'  => $userId,
+                    'name'     => "Hero_{$userId}",
+                    'maxhp'    => 100,
+                    'hp'       => 100,
+                    'level'    => 1,
+                    'pattack'  => 10,
+                    'mattack'  => 5,
+                    'defense'  => 8,
+                    'agility'  => 7,
+                    'stamina'  => 12,
+                ]);
+            }
+        }
+
+        // —————————————
+        // 4) Persiste no Redis
+        $characterData = $character->toArray();
+        Redis::set(
+            "character_session:{$character->id}",
+            json_encode([
+                ...$characterData,
+                'user_id' => $userId
+            ])
+        );
+
+        // —————————————
+        // 5) Responde ao cliente
         $connection->send(json_encode([
-            'event' => 'unity-response',
-            'data' => ['message' => 'Connected and character registered.']
+            'event'     => 'character_connected',
+            'character' => $characterData,
         ]));
     }
 }

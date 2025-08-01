@@ -13,21 +13,34 @@ class JoinBattleHandler implements HandlesUnityEvent
 {
     public function handle(array $payload, int $userId, string $token, Connection $connection): void
     {
-        $battleId = $payload['battle_instance'] ?? null;
-
-        if (!$battleId) {
+        // 1) Extrai e valida data
+        $data = $payload['data'] ?? null;
+        if (! is_array($data)) {
             $connection->send(json_encode([
                 'event' => 'unity-response',
-                'data' => ['message' => 'Missing battle instance.']
+                'data'  => ['message' => 'Missing data payload.']
             ]));
             return;
         }
 
-        Redis::sadd("battle:{$battleId}:players", $userId);
+        // 2) Puxa battle_id de dentro de data
+        $battleId = $data['battle_id'] ?? null;
+        if (! $battleId) {
+            $connection->send(json_encode([
+                'event' => 'unity-response',
+                'data'  => ['message' => 'Missing battle ID.']
+            ]));
+            return;
+        }
 
+        // 3) Adiciona o usuário na hash da batalha e atualiza sessão
+        Redis::hset("battle:{$battleId}:users", $userId, true);
+        Redis::hset("session:{$token}", 'battle_instance_id', $battleId);
+
+        // 4) Responde ao cliente com confirmação
         $connection->send(json_encode([
-            'event' => 'unity-response',
-            'data' => ['message' => "Joined battle $battleId."]
+            'event' => 'battle_joined',
+            'data'  => ['battle_id' => $battleId]
         ]));
     }
 }

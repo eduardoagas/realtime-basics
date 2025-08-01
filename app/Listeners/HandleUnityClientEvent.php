@@ -39,15 +39,6 @@ class HandleUnityClientEvent
 
 
         $this->dispatcher->dispatch($type, $payload, $userId, $token, $event->connection);
-        /*match ($type) {
-            'create_battle' => $this->createBattle($userId, $payload['enemy_id'] ?? null, $token),
-            'join_battle' => $this->joinBattle($userId, $payload['battle_id'], $token),
-            'shoot' => $this->Shoot($userId, $token),
-            'client-shootRequest' => $this->shootShot($event),
-            'connect_to_server' => $this->connectToServer($userId, $token, $payload),
-            'battle_with_monster' => $this->battleWithMonster($userId, $token),
-            default => $connection->send(json_encode(['error' => 'Invalid message type']))
-        };*/
     }
 
 

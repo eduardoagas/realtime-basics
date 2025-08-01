@@ -20,6 +20,7 @@ class UnityEventDispatcher
             'client-shootRequest' => \App\WebSocket\Handlers\ShootShotHandler::class,
             'connect_to_server' => \App\WebSocket\Handlers\ConnectToServerHandler::class,
             'battle_with_monster' => \App\WebSocket\Handlers\BattleWithMonsterHandler::class,
+            'use_skill' => \App\WebSocket\Handlers\UseSkillHandler::class,
             // adicionar os demais aqui...
         ];
     }

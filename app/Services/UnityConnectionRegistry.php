@@ -31,6 +31,20 @@ class UnityConnectionRegistry
         }
     }
 
+    public static function sendToUser(int $userId, array $payload): void
+    {
+        if (isset(self::$connectionsByUser[$userId])) {
+            self::$connectionsByUser[$userId]->send(json_encode($payload));
+        }
+    }
+
+    public static function broadcastToUsers(array $userIds, array $payload): void
+    {
+        foreach ($userIds as $userId) {
+            self::sendToUser((int)$userId, $payload);
+        }
+    }
+
     public static function all(): array
     {
         Log::info("Current connections: " . json_encode(array_keys(self::$connectionsByUser)));
