@@ -39,17 +39,28 @@ class UseSkillHandler implements HandlesUnityEvent
             return;
         }
 
-        $session = json_decode(Redis::get("session:$token"), true);
+        $session = Redis::hgetall("session:$token");
+        Log::info("session = " . json_encode($session));
         $battleId = $session['battle_instance_id'] ?? null;
+        Log::info("battleId = " . $battleId);
 
-        if (!$battleId || !Redis::exists("battle:$battleId:character")) {
+        if (!$battleId || !Redis::exists("battle:$battleId:characters")) {
             //TODO: Mudei acima para character... conferir se battleid está nula ? manter character msm?
             $connection->send(json_encode(['error' => 'Not in a valid battle instance']));
             return;
         }
 
+        Log::info("im here btich");
         $characterId = $session['character_id'] ?? null;
-        $characterData = json_decode(Redis::get("character_session:$characterId"), true);
+
+        if (!$characterId) {
+            $connection->send(json_encode([
+                'event' => 'unity-response',
+                'data' => ['error' => 'Character not found in session']
+            ]));
+            return;
+        }
+        $characterData = Redis::hgetall("character_session:$characterId");
 
         if (!$characterData) {
             $connection->send(json_encode(['error' => 'Character session not found']));
@@ -59,7 +70,7 @@ class UseSkillHandler implements HandlesUnityEvent
         $skill = $this->skills[$skillId];
 
         if ($skill['type'] === 'damage') {
-            if ($targetType !== 'monster' || !$targetId || !Redis::hexists("battle:$battleId:monsters", $targetId)) {
+            if ($targetType !== 'enemy' || !$targetId || !Redis::hexists("battle:$battleId:monsters", $targetId)) {
                 $connection->send(json_encode(['error' => 'Invalid monster target']));
                 return;
             }
@@ -110,6 +121,6 @@ class UseSkillHandler implements HandlesUnityEvent
         }
 
         $userIds = Redis::smembers("battle:$battleId:users");
-        UnityConnectionRegistry::broadcastToUsers($userIds, $eventPayload);
+        UnityConnectionRegistry::broadcastToUsers($userIds, $eventPayload); //isso n é client-necessário exatamente, apenas talvez um "notice" que atualize algum broadcast update stats de batalha total
     }
 }

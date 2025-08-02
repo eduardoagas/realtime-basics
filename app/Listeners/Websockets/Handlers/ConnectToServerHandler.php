@@ -34,12 +34,12 @@ class ConnectToServerHandler implements HandlesUnityEvent
                 ->first();
 
             if (! $character) {
-            $connection->send(json_encode([
+                $connection->send(json_encode([
                     'event'   => 'character_invalid',
                     'message' => 'Character not found or does not belong to user.',
-            ]));
-            return;
-        }
+                ]));
+                return;
+            }
         }
         // —————————————
         // 3) Se não enviou, cria ou recupera o primeiro
@@ -66,14 +66,21 @@ class ConnectToServerHandler implements HandlesUnityEvent
         // —————————————
         // 4) Persiste no Redis
         $characterData = $character->toArray();
-        Redis::set(
-            "character_session:{$character->id}",
-            json_encode([
-                ...$characterData,
-                'user_id' => $userId
-            ])
-        );
+        // Persistir a sessão como HASH
+        Redis::hmset("session:$token", [
+            'character_id' => $character->id // ← incluído aqui
+        ]);
 
+        // Persistir os dados do personagem como HASH separado
+        Redis::hmset("character_session:{$character->id}", [
+            ...$characterData, // certifique-se de que isso retorna apenas dados escalares
+            'user_id' => $userId,
+        ]);
+
+        $connection->send(json_encode([
+            'event' => 'unity-response',
+            'data' => ['message' => 'Connection established.']
+        ]));
         // —————————————
         // 5) Responde ao cliente
         $connection->send(json_encode([

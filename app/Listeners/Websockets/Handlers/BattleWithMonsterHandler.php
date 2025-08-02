@@ -12,10 +12,9 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
     public function handle(array $payload, int $userId, string $token, Connection $connection): void
     {
         $characterJson = collect(Redis::keys("character_session:*"))
-            ->map(fn($key) => Redis::get($key))
-            ->filter()
-            ->map(fn($json) => json_decode($json, true))
-            ->firstWhere('user_id', $userId);
+            ->map(fn($key) => Redis::hgetall($key)) // ← aqui é hgetall, não get
+            ->filter() // remove vazios
+            ->firstWhere('user_id', (string) $userId); // cuidado: tudo vira string no Redis
 
         Log::info("CharacterJson = " . json_encode($characterJson));
 
@@ -23,7 +22,7 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
             $connection->send(json_encode(['error' => 'Character not found in session']));
             return;
         }
-
+        //musar enemy_id aqui ou:
         $monster = [
             'name' => 'Goblin',
             'maxhp' => 80,
@@ -36,11 +35,15 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
             'stamina' => 10,
         ];
 
-        $battleId = uniqid('battle_', true);
 
-        Redis::hset("battle:$battleId:character", $characterJson['id'], json_encode($characterJson));
-        $monsterId = uniqid('m_', true); // ou algum ID sequencial
-        Redis::hset("battle:$battleId:monsters", $monsterId, json_encode($monster));
+        $battleId = uniqid('battle_', true);
+        Redis::sadd("battle:$battleId:users", $userId);
+        Redis::hset("battle:$battleId:characters", $characterJson['id'], json_encode($characterJson));
+        $monsterIndex = 1; // se for só um inimigo
+        //    foreach ($monsters as $index => $monster) {
+        //  Redis::hset("battle:$battleId:monsters", $index + 1, json_encode($monster));
+        //}
+        Redis::hset("battle:$battleId:monsters", (string) $monsterIndex, json_encode($monster));
         Redis::hset("session:$token", 'battle_instance_id', $battleId);
 
         $connection->send(json_encode([
@@ -50,7 +53,7 @@ class BattleWithMonsterHandler implements HandlesUnityEvent
                 $characterJson['id'] => $characterJson
             ],
             'monster' => [
-                $monsterId => $monster
+                (string) $monsterIndex => $monster
             ]
         ]));
     }
