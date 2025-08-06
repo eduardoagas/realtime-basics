@@ -64,9 +64,10 @@ class StaminaService
         // Calcula taxa base de regeneração (stamina/segundo)
         $baseRegen = $minRate + ($maxRate - $minRate) * $agiFactor;
 
-        // Fator beta: quanto mais stamina, mais rápido recupera (entre 1 e B)
-        $ratio = max($initial / $sMax, 0);
-        $betaFactor = 1 + ($B - 1) * pow($ratio, $beta);
+        // Fator beta: quanto mais stamina bruta, mais rápido regenera
+        $maxInitial = 100; // Define o teto de influência do beta (ex: 100 pontos)
+        $clampedInitial = min($initial, $maxInitial);
+        $betaFactor = 1 + ($B - 1) * pow($clampedInitial / $maxInitial, $beta);
 
         // Recuperação
         // Quantidade de stamina regenerada desde o último cálculo
