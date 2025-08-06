@@ -2,7 +2,7 @@
 
 // app/WebSocket/Handlers/BattleWithMonsterHandler.php
 
-namespace App\WebSocket\Handlers;
+namespace App\WebSockets\Handlers;
 
 use App\WebSocket\Contracts\HandlesUnityEvent;
 use Laravel\Reverb\Contracts\Connection;

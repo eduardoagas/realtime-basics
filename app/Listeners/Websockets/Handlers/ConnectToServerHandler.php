@@ -1,6 +1,6 @@
 <?php
 
-namespace App\WebSocket\Handlers;
+namespace App\WebSockets\Handlers;
 
 use App\Models\Character;
 use Illuminate\Support\Facades\Log;

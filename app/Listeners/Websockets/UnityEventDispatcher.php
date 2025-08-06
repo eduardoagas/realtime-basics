@@ -14,13 +14,13 @@ class UnityEventDispatcher
     public function __construct()
     {
         $this->handlers = [
-            'create_battle' => \App\WebSocket\Handlers\CreateBattleHandler::class,
-            'join_battle' => \App\WebSocket\Handlers\JoinBattleHandler::class,
-            'shoot' => \App\WebSocket\Handlers\ShootHandler::class,
-            'client-shootRequest' => \App\WebSocket\Handlers\ShootShotHandler::class,
-            'connect_to_server' => \App\WebSocket\Handlers\ConnectToServerHandler::class,
-            'battle_with_monster' => \App\WebSocket\Handlers\BattleWithMonsterHandler::class,
-            'use_skill' => \App\WebSocket\Handlers\UseSkillHandler::class,
+            'create_battle' => \App\WebSocinkets\Handlers\CreateBattleHandler::class,
+            'join_battle' => \App\WebSockets\Handlers\JoinBattleHandler::class,
+            'shoot' => \App\WebSockets\Handlers\ShootHandler::class,
+            'client-shootRequest' => \App\WebSockets\Handlers\ShootShotHandler::class,
+            'connect_to_server' => \App\WebSockets\Handlers\ConnectToServerHandler::class,
+            'battle_with_monster' => \App\WebSockets\Handlers\BattleWithMonsterHandler::class,
+            'use_skill' => \App\WebSockets\Handlers\UseSkillHandler::class,
             // adicionar os demais aqui...
         ];
     }
