@@ -7,8 +7,8 @@ sail artisan reverb:restart
 sail artisan optimize:clear
 
 docker exec -it realtime-basics-redis-1 redis-cli
-
--REDIS
-
 keys *
 FLUSHDB
+
+
+sail artisan octane:start --server=swoole --host=0.0.0.0 --port=80 --watch
