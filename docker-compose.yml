@@ -31,6 +31,8 @@ services:
             - redis
     pgsql:
         image: 'postgres:17'
+        ports:
+            - "5432:5432"
         restart: always
         environment:
             PGPASSWORD: '${DB_PASSWORD:-secret}'
@@ -55,6 +57,8 @@ services:
             timeout: 5s
     redis:
         image: 'redis:alpine'
+        ports:
+            - "6379:6379" 
         restart: always
         volumes:
             - 'sail-redis:/data'
