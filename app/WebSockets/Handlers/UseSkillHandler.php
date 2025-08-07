@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Redis;
 use Laravel\Reverb\Contracts\Connection;
 use App\Services\UnityConnectionRegistry;
 use App\Exceptions\SkillCooldownException;
-use App\WebSocket\Contracts\HandlesUnityEvent;
+use App\WebSockets\Contracts\HandlesUnityEvent;
 use App\Exceptions\InsufficientStaminaException;
 
 class UseSkillHandler implements HandlesUnityEvent

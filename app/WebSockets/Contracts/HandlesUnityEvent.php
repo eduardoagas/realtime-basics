@@ -2,7 +2,7 @@
 
 // app/WebSocket/Contracts/HandlesUnityEvent.php
 
-namespace App\WebSocket\Contracts;
+namespace App\WebSockets\Contracts;
 
 use Laravel\Reverb\Contracts\Connection;
 

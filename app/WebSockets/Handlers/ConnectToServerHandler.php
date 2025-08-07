@@ -6,7 +6,7 @@ use App\Models\Character;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Reverb\Contracts\Connection;
-use App\WebSocket\Contracts\HandlesUnityEvent;
+use App\WebSockets\Contracts\HandlesUnityEvent;
 
 class ConnectToServerHandler implements HandlesUnityEvent
 {

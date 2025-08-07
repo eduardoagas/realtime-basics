@@ -4,7 +4,7 @@
 
 namespace App\WebSockets\Handlers;
 
-use App\WebSocket\Contracts\HandlesUnityEvent;
+use App\WebSockets\Contracts\HandlesUnityEvent;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Reverb\Contracts\Connection;
 use App\Services\UnityConnectionRegistry;

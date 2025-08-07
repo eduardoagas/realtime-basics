@@ -1,7 +1,7 @@
 <?php
 // app/WebSocket/UnityEventDispatcher.php
 
-namespace App\WebSocket;
+namespace App\WebSockets;
 
 use App\WebSocket\Contracts\HandlesUnityEvent;
 use Laravel\Reverb\Contracts\Connection;
@@ -14,7 +14,7 @@ class UnityEventDispatcher
     public function __construct()
     {
         $this->handlers = [
-            'create_battle' => \App\WebSocinkets\Handlers\CreateBattleHandler::class,
+            'create_battle' => \App\WebSockets\Handlers\CreateBattleHandler::class,
             'join_battle' => \App\WebSockets\Handlers\JoinBattleHandler::class,
             'shoot' => \App\WebSockets\Handlers\ShootHandler::class,
             'client-shootRequest' => \App\WebSockets\Handlers\ShootShotHandler::class,

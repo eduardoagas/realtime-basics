@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Listeners;
+namespace App\WebSockets;
 
 use App\Models\Character;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
-use App\WebSocket\UnityEventDispatcher;
+use App\WebSockets\UnityEventDispatcher;
 use Laravel\Reverb\Contracts\Connection;
 use App\Services\UnityConnectionRegistry;
 use Laravel\Reverb\Events\MessageReceived;

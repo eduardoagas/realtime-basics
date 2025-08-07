@@ -4,7 +4,7 @@
 
 namespace App\WebSockets\Handlers;
 
-use App\WebSocket\Contracts\HandlesUnityEvent;
+use App\WebSockets\Contracts\HandlesUnityEvent;
 use Laravel\Reverb\Contracts\Connection;
 
 class ShootShotHandler implements HandlesUnityEvent
