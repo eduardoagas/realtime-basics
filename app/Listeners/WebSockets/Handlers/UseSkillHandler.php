@@ -1,13 +1,13 @@
 <?php
 
-namespace App\WebSockets\Handlers;
+namespace App\Listeners\WebSockets\Handlers;
 
 use App\Services\Battle\SkillService;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Reverb\Contracts\Connection;
 use App\Services\UnityConnectionRegistry;
 use App\Exceptions\SkillCooldownException;
-use App\WebSockets\Contracts\HandlesUnityEvent;
+use App\Listeners\WebSockets\Contracts\HandlesUnityEvent;
 use App\Exceptions\InsufficientStaminaException;
 
 class UseSkillHandler implements HandlesUnityEvent

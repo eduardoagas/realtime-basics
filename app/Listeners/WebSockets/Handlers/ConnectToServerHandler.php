@@ -1,12 +1,12 @@
 <?php
 
-namespace App\WebSockets\Handlers;
+namespace App\Listeners\WebSockets\Handlers;
 
 use App\Models\Character;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Reverb\Contracts\Connection;
-use App\WebSockets\Contracts\HandlesUnityEvent;
+use App\Listeners\WebSockets\Contracts\HandlesUnityEvent;
 
 class ConnectToServerHandler implements HandlesUnityEvent
 {

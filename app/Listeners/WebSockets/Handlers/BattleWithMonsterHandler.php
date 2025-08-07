@@ -1,6 +1,6 @@
 <?php
 
-namespace App\WebSockets\Handlers;
+namespace App\Listeners\WebSockets\Handlers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;

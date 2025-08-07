@@ -1,6 +1,6 @@
 <?php
 
-namespace App\WebSocketHandlers;
+namespace App\Listeners\WebSocketHandlers;
 
 use App\Events\Example;
 use App\Events\ExampleEvent;

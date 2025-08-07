@@ -2,9 +2,9 @@
 
 // app/WebSocket/Handlers/BattleWithMonsterHandler.php
 
-namespace App\WebSockets\Handlers;
+namespace App\Listeners\WebSockets\Handlers;
 
-use App\WebSockets\Contracts\HandlesUnityEvent;
+use App\Listeners\WebSockets\Contracts\HandlesUnityEvent;
 use Laravel\Reverb\Contracts\Connection;
 
 class ShootShotHandler implements HandlesUnityEvent
