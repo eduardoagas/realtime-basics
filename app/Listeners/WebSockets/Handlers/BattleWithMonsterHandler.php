@@ -49,6 +49,7 @@ class BattleWithMonsterHandler
 
         // Criar o goblin fixo
         $goblin = [
+            'monster_id' => 123,  // id do tipo goblin (referência banco)
             'name' => "Goblin",
             'maxhp' => 80,
             'hp' => 80,
@@ -57,14 +58,17 @@ class BattleWithMonsterHandler
             'mattack' => 6,
             'defense' => 5,
             'stamina' => 25,
-            'agility' => rand(0, 300),
+            'agility' => 80, // rand(0, 300),
             'type' => 'goblin', // importante para IA
         ];
 
         $monsters[] = $goblin;
 
+        $monsterInstanceId = 1; // Id da instância dentro da batalha (chave no Redis)
+
+        $monsterInstanceIdstr = (string)$monsterInstanceId;
         // Salvar goblin no hash da batalha, índice 1
-        Redis::hset("battle:$battleId:monsters", "1", json_encode($goblin));
+        Redis::hset("battle:$battleId:monsters", $monsterInstanceIdstr, json_encode($goblin));
 
         $now = now()->timestamp;
 
@@ -75,7 +79,7 @@ class BattleWithMonsterHandler
             $goblin['agility']
         );
 
-        Redis::hset("battle:$battleId:stamina_data", "monster:1", json_encode($monsterStaminaData));
+        Redis::hset("battle:$battleId:stamina_data", "monster:$monsterInstanceIdstr", json_encode($monsterStaminaData));
 
         // Inicializar stamina do personagem
         $characterStaminaData = $this->staminaService->initializeStamina(

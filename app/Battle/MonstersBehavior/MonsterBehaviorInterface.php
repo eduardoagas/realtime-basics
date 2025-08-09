@@ -1,5 +1,6 @@
 <?php
-namespace App\Battle;
+
+namespace App\Battle\MonstersBehavior;
 
 interface MonsterBehaviorInterface {
     /**

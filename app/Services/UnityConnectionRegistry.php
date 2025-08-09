@@ -16,10 +16,10 @@ class UnityConnectionRegistry
     {
         Log::info("Registering user $userId with connection ID: " . $connection->id());
 
-        // Cache local
+        // Cache local da conexão
         self::$connectionsByUser[$userId] = $connection;
 
-        // Salva metadados no Redis
+        // Salva metadados no Redis (opcional, pode ser útil para monitoramento)
         Redis::hset(self::REDIS_KEY, $userId, json_encode([
             'connection_id' => $connection->id(),
             'server' => gethostname(),
@@ -39,7 +39,7 @@ class UnityConnectionRegistry
                 Log::info("Removing connection for user $userId (ID: " . $connection->id() . ")");
                 unset(self::$connectionsByUser[$userId]);
 
-                // Remove do Redis
+                // Remove do Redis também
                 Redis::hdel(self::REDIS_KEY, $userId);
                 break;
             }
@@ -49,16 +49,21 @@ class UnityConnectionRegistry
     public static function sendToUser(int $userId, array $payload): void
     {
         if (isset(self::$connectionsByUser[$userId])) {
-            // Conexão local → envia direto
+            Log::info("sendToUser: User $userId is local. Sending message directly.");
             self::$connectionsByUser[$userId]->send(json_encode($payload));
         } else {
-            // Não está local → publica no Redis para outra instância entregar
-            Log::info("sendToUser: Publishing message for remote user $userId via Redis.");
+            Log::info("sendToUser: User $userId NOT found locally. Publishing message via Redis.");
             Redis::publish(self::REDIS_CHANNEL, json_encode([
                 'user_id' => $userId,
                 'payload' => $payload
             ]));
         }
+    }
+
+    public static function logLocalConnections(): void
+    {
+        $userIds = array_keys(self::$connectionsByUser);
+        Log::info("Currently local connected users: " . implode(', ', $userIds));
     }
 
     public static function broadcastToUsers(array $userIds, array $payload): void
@@ -81,36 +86,11 @@ class UnityConnectionRegistry
     public static function dump(): void
     {
         Log::info('[UnityConnectionRegistry::dump] Dumping all active user connections:');
-
         foreach (self::$connectionsByUser as $userId => $connection) {
             Log::info("  User: {$userId} → Connection ID: " . $connection->id());
         }
-
         $globalConnections = Redis::hgetall(self::REDIS_KEY);
         Log::info('[UnityConnectionRegistry::dump] Global Redis connections: ' . json_encode($globalConnections));
-
         Log::info('[UnityConnectionRegistry::dump] End of dump.');
-    }
-
-    /**
-     * Escuta mensagens publicadas no Redis e entrega para usuários locais.
-     */
-    public static function subscribeToRedisMessages(): void
-    {
-        Redis::subscribe([self::REDIS_CHANNEL], function ($message) {
-            $data = json_decode($message, true);
-
-            if (!isset($data['user_id'], $data['payload'])) {
-                Log::warning("Invalid message received on Redis channel.");
-                return;
-            }
-
-            $userId = (int)$data['user_id'];
-
-            if (isset(self::$connectionsByUser[$userId])) {
-                Log::info("Delivering cross-server message to local user $userId.");
-                self::$connectionsByUser[$userId]->send(json_encode($data['payload']));
-            }
-        });
     }
 }

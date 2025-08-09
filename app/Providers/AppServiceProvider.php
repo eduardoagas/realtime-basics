@@ -5,8 +5,8 @@ namespace App\Providers;
 use App\Battle\BattleManager;
 use Laravel\Octane\Facades\Octane;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\ServiceProvider;
+use App\Services\UnityConnectionRegistry;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,20 +17,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        /**
+         * Inicializa o gerenciador de batalhas.
+         * Será processado a cada X segundos pelo Octane sem bloquear o loop.
+         */
         $battleManager = new BattleManager();
 
+        // Executa a cada 5 segundos
         Octane::tick('battle-ticker', function () use ($battleManager) {
             $battleManager->processBattles();
-            $battleManager->cleanupOldBattles(3600); // Limpa batalhas paradas > 1h
-        }, 1);
-
-
-
-        /* Log::info('AppServiceProvider boot chamado!');
-
-        Octane::tick('my-ticker2', function () {
-            echo "Tick executado em " . now() . PHP_EOL;
-            Log::info('Tick executado no AppServiceProvider boot.');
-        }, 5);*/
+            // $battleManager->cleanupOldBattles(3600); // Limpa batalhas paradas há > 1h
+        }, 5);
     }
 }

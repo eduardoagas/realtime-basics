@@ -106,7 +106,7 @@ class BattleManager
 
             foreach ($monsters as $monsterKey => &$monster) {
                 // Pega stamina atual usando StaminaService
-                $currentStamina = StaminaService::getCurrentStamina($battleId, (string)$monster['id'], 'monster');
+                $currentStamina = StaminaService::getCurrentStamina($battleId, (string)$monsterKey, 'monster');
 
                 // Atualiza o array do monstro para passar para a decisão de comportamento
                 $monster['current_stamina'] = $currentStamina;
@@ -148,8 +148,8 @@ class BattleManager
     protected function resolveBehavior(string $type)
     {
         $map = [
-            'goblin' => \App\Battle\GoblinBehavior::class,
-            'orc' => \App\Battle\OrcBehavior::class,
+            'goblin' => \App\Battle\MonstersBehavior\GoblinBehavior::class,
+            'orc' => \App\Battle\MonstersBehavior\OrcBehavior::class,
         ];
 
         if (isset($map[$type])) {
@@ -159,7 +159,7 @@ class BattleManager
 
         Log::debug("Resolved default behavior for monster type $type (unknown)");
 
-        return new class implements \App\Battle\MonsterBehaviorInterface {
+        return new class implements \App\Battle\MonstersBehavior\MonsterBehaviorInterface {
             public function decideAction(array $monsterData, array $battleState): ?string
             {
                 return null;

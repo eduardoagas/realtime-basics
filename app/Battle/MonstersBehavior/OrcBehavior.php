@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Battle;
+namespace App\Battle\MonstersBehavior;
 
 class OrcBehavior implements MonsterBehaviorInterface
 {
