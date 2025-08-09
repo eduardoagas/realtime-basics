@@ -18,6 +18,7 @@ class BattleWithMonsterHandler
 
     public function handle(array $payload, int $userId, string $token, Connection $connection): void
     {
+        // Buscar o personagem do usuário na sessão Redis
         $characterJson = collect(Redis::keys("character_session:*"))
             ->map(fn($key) => Redis::hgetall($key))
             ->filter()
@@ -30,51 +31,53 @@ class BattleWithMonsterHandler
             return;
         }
 
-        // Criar monstros
+        // Criar um goblin (monstro fixo)
         $monsters = [];
-        //$monsterCount = $payload['monster_count'] ?? 1;
-        $monsterCount = 1;
+
         $battleId = uniqid('battle_', true);
         $characterId = $characterJson['id'];
 
+        // Registrar usuário e personagem na batalha
         Redis::sadd("battle:$battleId:users", $userId);
         Redis::hset("battle:$battleId:characters", $characterId, json_encode($characterJson));
+
+        // Vincular battle_instance_id na sessão
         Redis::hset("session:$token", 'battle_instance_id', $battleId);
 
+        // Registra batalha ativa no conjunto global
+        Redis::sadd('battles:active', $battleId);
 
-        // 🔵 Primeiro loop: Criar e armazenar os monstros
-        for ($i = 1; $i < $monsterCount + 1; $i++) {
-            $monster = [
-                'name' => "Monster #" . ($i),
-                'maxhp' => 80,
-                'hp' => 80,
-                'level' => 1,
-                'pattack' => 12,
-                'mattack' => 6,
-                'defense' => 5,
-                'stamina' => rand(5, 10),
-                'agility' => rand(0, 300),
-            ];
+        // Criar o goblin fixo
+        $goblin = [
+            'name' => "Goblin",
+            'maxhp' => 80,
+            'hp' => 80,
+            'level' => 1,
+            'pattack' => 12,
+            'mattack' => 6,
+            'defense' => 5,
+            'stamina' => 25,
+            'agility' => rand(0, 300),
+            'type' => 'goblin', // importante para IA
+        ];
 
-            $monsters[] = $monster;
-            Redis::hset("battle:$battleId:monsters", (string) $i, json_encode($monster));
-        }
+        $monsters[] = $goblin;
+
+        // Salvar goblin no hash da batalha, índice 1
+        Redis::hset("battle:$battleId:monsters", "1", json_encode($goblin));
+
         $now = now()->timestamp;
-        // 🟡 Segundo loop: Inicializar stamina dos monstros
-        foreach ($monsters as $i => $monster) {
-            $monsterStaminaData = $this->staminaService->initializeStamina(
-                $now,
-                $monster['stamina'],
-                $monster['agility']
-            );
 
-            Redis::hset("battle:$battleId:stamina_data", "monster:$i", json_encode($monsterStaminaData));
-        }
+        // Inicializar stamina do monstro goblin
+        $monsterStaminaData = $this->staminaService->initializeStamina(
+            $now,
+            $goblin['stamina'],
+            $goblin['agility']
+        );
 
-        Redis::hset("battle:$battleId:stamina_data", "monster:$i", json_encode($monsterStaminaData));
+        Redis::hset("battle:$battleId:stamina_data", "monster:1", json_encode($monsterStaminaData));
 
-
-        // 🟢 Stamina do personagem
+        // Inicializar stamina do personagem
         $characterStaminaData = $this->staminaService->initializeStamina(
             $now,
             (int) $characterJson['stamina'],
@@ -83,16 +86,19 @@ class BattleWithMonsterHandler
 
         Redis::hset("battle:$battleId:stamina_data", "character:$characterId", json_encode($characterStaminaData));
 
+        // Enviar resposta para o cliente com dados da batalha criada
         $connection->send(json_encode([
             'event' => 'unity-response',
             'character' => [
                 $characterId => $characterJson
             ],
             'data' => [
-                'message' => 'Battle created!',
+                'message' => 'Battle created with Goblin!',
                 'battle_instance' => $battleId,
                 'monsters' => $monsters
             ]
         ]));
+
+        Log::info("Battle $battleId created with Goblin for user $userId.");
     }
 }
