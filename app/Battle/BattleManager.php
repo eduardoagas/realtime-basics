@@ -5,9 +5,24 @@ namespace App\Battle;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use App\Services\Battle\StaminaService;
+use App\Services\Battle\BattleBroadcaster;
 
 class BattleManager
 {
+    protected StaminaService $staminaService;
+    protected BattleActions $battleActions;
+    protected BattleBroadcaster $broadcaster;
+
+    public function __construct(
+        StaminaService $staminaService,
+        BattleActions $battleActions,
+        BattleBroadcaster $broadcaster
+    ) {
+        $this->staminaService = $staminaService;
+        $this->battleActions = $battleActions;
+        $this->broadcaster = $broadcaster;
+    }
+
     public function createBattle(string $battleId, array $battleData): void
     {
         Log::info("Creating battle $battleId with data:", ['battleData' => $battleData]);
@@ -105,10 +120,9 @@ class BattleManager
             }
 
             foreach ($monsters as $monsterKey => &$monster) {
-                // Pega stamina atual usando StaminaService
-                $currentStamina = StaminaService::getCurrentStamina($battleId, (string)$monsterKey, 'monster');
+                // Pega stamina atual usando serviço injetado
+                $currentStamina = $this->staminaService->getCurrentStamina($battleId, (string)$monsterKey, 'monster');
 
-                // Atualiza o array do monstro para passar para a decisão de comportamento
                 $monster['current_stamina'] = $currentStamina;
 
                 $behavior = $this->resolveBehavior($monster['type'] ?? '');
@@ -127,7 +141,8 @@ class BattleManager
                 Log::info("Monster {$monster['name']} decided action: " . ($action ?? 'none'));
 
                 if ($action) {
-                    BattleActions::executeAction($monster, $action, $characters[$targetCharacterKey], $battleId);
+                    // Agora via instância, não estático
+                    $this->battleActions->executeAction($monster, $action, $characters[$targetCharacterKey], $battleId);
                 }
             }
 

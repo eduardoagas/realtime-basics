@@ -8,6 +8,15 @@ use App\Services\Battle\BattleBroadcaster;
 
 class BattleActions
 {
+
+    protected BattleBroadcaster $broadcaster;
+    protected StaminaService $staminaService;
+
+    public function __construct(BattleBroadcaster $broadcaster, StaminaService $staminaService)
+    {
+        $this->broadcaster = $broadcaster;
+        $this->staminaService = $staminaService;
+    }
     /**
      * Executa a ação do monstro contra o personagem alvo.
      *
@@ -17,7 +26,7 @@ class BattleActions
      * @param string $battleId
      * @return void
      */
-    public static function executeAction(array &$monster, string $action, array &$targetCharacter, string $battleId): void
+    public function executeAction(array &$monster, string $action, array &$targetCharacter, string $battleId): void
     {
         switch ($action) {
             case 'attack':
@@ -38,7 +47,7 @@ class BattleActions
                 break;
         }
 
-        BattleBroadcaster::broadcastToBattle($battleId, [
+        $this->broadcaster->broadcastToBattle($battleId, [
             'event' => 'battle_action',
             'data' => [
                 'monster' => $monster,

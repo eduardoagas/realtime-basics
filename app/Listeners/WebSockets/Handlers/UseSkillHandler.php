@@ -13,10 +13,12 @@ use App\Exceptions\InsufficientStaminaException;
 class UseSkillHandler implements HandlesUnityEvent
 {
     private SkillService $skillService;
+    private UnityConnectionRegistry $registry;
 
-    public function __construct()
+    public function __construct(UnityConnectionRegistry $registry)
     {
         $this->skillService = new SkillService();
+        $this->registry = $registry;
     }
 
     public function handle(array $payload, int $userId, string $token, Connection $connection): void
@@ -52,7 +54,7 @@ class UseSkillHandler implements HandlesUnityEvent
             $result = $this->skillService->applySkill($characterData, $enemyData, $battleId, (int)$skillId);
 
             $userIds = Redis::smembers("battle:$battleId:users");
-            UnityConnectionRegistry::broadcastToUsers($userIds, $result);
+            $this->registry->broadcastToUsers($userIds, $result);
         } catch (InsufficientStaminaException | SkillCooldownException $e) {
             $connection->send(json_encode(['error' => $e->getMessage()]));
         } catch (\Exception $e) {
